@@ -26,16 +26,8 @@ python criar_colecoes_e_dados.py
 ```shell
 python principal.py
 ```
-### Testar conexão com o Banco:
-```shell
-python test.py
-```
-### Para deletar as tabelas caso necessario:
-```shell
-python deletar_tabelas.py
-```
 
 ## Link video explicativo:
 ```shell
-https://www.youtube.com/watch?v=s4mJg1oIwI0
+
 ```
