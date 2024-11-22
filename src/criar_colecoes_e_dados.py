@@ -1,23 +1,15 @@
 import logging
 from conexion.mongo_queries import MongoQueries
 from conexion.oracle_queries import OracleQueries
+import pandas as pd
 import json
 
 LIST_OF_COLLECTIONS = ["tarefas", "usuarios"]
-logger = logging.getLogger(name="Example_CRUD_MongoDB")
+logger = logging.getLogger(name="Crud_Mongo_Gerenciamento_Tarefas")
 logger.setLevel(level=logging.WARNING)
 mongo = MongoQueries()
 
 def createCollections(drop_if_exists:bool=False):
-    """
-        Lista as coleções existentes, verificar se as coleções padrão estão entre as coleções existentes.
-        Caso exista e o parâmetro de exclusão esteja configurado como True, irá apagar a coleção e criar novamente.
-        Caso não exista, cria a coleção.
-        
-        Parameter:
-                  - drop_if_exists: True  -> apaga a tabela existente e recria
-                                    False -> não faz nada
-    """
     mongo.connect()
     existing_collections = mongo.db.list_collection_names()
     for collection in LIST_OF_COLLECTIONS:
@@ -41,16 +33,25 @@ def extract_and_insert():
     oracle = OracleQueries()
     oracle.connect()
     sql = "select * from labdatabase.{table}"
+    
     for collection in LIST_OF_COLLECTIONS:
         df = oracle.sqlToDataFrame(sql.format(table=collection))
+        
         if collection == "tarefas":
-            df["data_criacao"] = df["data_criacao"].dt.strftime('%Y-%m-%d %H:%M:%S')
-            df["data_conclusao"] = df["data_conclusao"].dt.strftime('%Y-%m-%d %H:%M:%S')
-        logger.warning(f"data extracted from database Oracle labdatabase.{collection}")
+            
+            df["data_criacao"] = pd.to_datetime(df["data_criacao"], errors='coerce')
+            df["data_conclusao"] = pd.to_datetime(df["data_conclusao"], errors='coerce')
+
+        logger.warning(f"Data extracted from Oracle database: labdatabase.{collection}")
+        
+        # Converte o DataFrame para JSON
         records = json.loads(df.T.to_json()).values()
-        logger.warning("data converted to json")
+        logger.warning("Data converted to JSON format")
+        
+        # Insere os registros no MongoDB
         insert_many(data=records, collection=collection)
-        logger.warning(f"documents generated at {collection} collection")
+        logger.warning(f"Documents inserted into {collection} collection")
+
 
 if __name__ == "__main__":
     logging.warning("Starting")

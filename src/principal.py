@@ -18,15 +18,19 @@ def relatorios(opcao_relatorio: int = 0):
     if opcao_relatorio == 1:
         print("Relatório de Usuários")
         relatorio.get_relatorio_usuarios()
+        input("Pressione Enter para Sair do Relatório de Usuários")
     elif opcao_relatorio == 2:
         print("Relatório de Tarefas")
         relatorio.get_relatorio_tarefas()
+        input("Pressione Enter para Sair do Relatório de Tarefas")
     elif opcao_relatorio == 3:
         print("Relatório de Tarefas Concluídas")
         relatorio.get_relatorio_tarefas_concluidas()
+        input("Pressione Enter para sair do relatório de tarefas concluídas.")
     elif opcao_relatorio == 4:
         print("Relatório de Qtde Tarefas por Usuario")
         relatorio.get_relatorio_tarefas_por_usuario()
+        input("Pressione Enter para Sair do Relatório de Tarefas por Usuário")
 
 # Inserir
 def inserir(opcao_inserir: int = 0):

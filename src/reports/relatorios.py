@@ -33,9 +33,17 @@ class Relatorio:
                                                     {'$sort': {'data_criacao': ASCENDING}}
                                                 ])
         df_tarefas = pd.DataFrame(list(query_result))
+
+        df_tarefas['data_criacao'] = pd.to_datetime(df_tarefas['data_criacao'], unit = 'ms')
+        df_tarefas['data_conclusao'] = pd.to_datetime(df_tarefas['data_conclusao'], unit = 'ms')
+
+        df_tarefas['data_criacao'] = df_tarefas['data_criacao'].apply(lambda x: str(x).split('.')[0])
+        df_tarefas['data_conclusao'] = df_tarefas['data_conclusao'].apply(lambda x: str(x).split('.')[0])
+
         mongo.close()
         print(df_tarefas)
-        input("Pressione Enter para Sair do Relatório de Tarefas")
+        
+
 
     def get_relatorio_tarefas_concluidas(self):
         mongo = MongoQueries()
@@ -43,16 +51,16 @@ class Relatorio:
         query_result = mongo.db["tarefas"].aggregate([
                                                     {'$match': {'status': 1}},
                                                     {
-                                                        '$lookup': {
+                                                        '$lookup': {  # Faz o join com a coleção de usuários
                                                             'from': 'usuarios',
                                                             'localField': 'cpf',
                                                             'foreignField': 'cpf',
                                                             'as': 'usuario'
                                                         }
                                                     },
-                                                    {'$unwind': '$usuario'},
+                                                    {'$unwind': '$usuario'},  
                                                     {
-                                                        '$project': {
+                                                        '$project': {  # Projeta os campos necessários
                                                             'codigo_tarefa': 1,
                                                             'titulo': 1,
                                                             'descricao': 1,
@@ -60,18 +68,32 @@ class Relatorio:
                                                             'data_conclusao': 1,
                                                             'tempo_gasto': {
                                                                 '$subtract': ['$data_conclusao', '$data_criacao']
-                                                            },
+                                                            },  
                                                             'usuario': '$usuario.nome',
                                                             'cpf': 1,
                                                             '_id': 0
                                                         }
                                                     },
-                                                    {'$sort': {'data_conclusao': ASCENDING}}
+                                                    {'$sort': {'data_conclusao': 1}}  
                                                 ])
+    
+        # Converte o resultado em DataFrame para exibição
         df_tarefas_concluidas = pd.DataFrame(list(query_result))
+
+        df_tarefas_concluidas['data_criacao'] = pd.to_datetime(df_tarefas_concluidas['data_criacao'], unit = 'ms')
+        df_tarefas_concluidas['data_conclusao'] = pd.to_datetime(df_tarefas_concluidas['data_conclusao'], unit = 'ms')
+
+        df_tarefas_concluidas['tempo_gasto'] = pd.to_timedelta(df_tarefas_concluidas['tempo_gasto'] / 1000, unit='s')
+
+        df_tarefas_concluidas['data_criacao'] = df_tarefas_concluidas['data_criacao'].apply(lambda x: str(x).split('.')[0])
+        df_tarefas_concluidas['data_conclusao'] = df_tarefas_concluidas['data_conclusao'].apply(lambda x: str(x).split('.')[0])
+        df_tarefas_concluidas['tempo_gasto'] = df_tarefas_concluidas['tempo_gasto'].apply(lambda x: str(x).split('.')[0])
+
         mongo.close()
+    
         print(df_tarefas_concluidas)
-        input("Pressione Enter para Sair do Relatório de Tarefas Concluídas")
+        
+
 
     def get_relatorio_tarefas_por_usuario(self):
         mongo = MongoQueries()
@@ -97,7 +119,7 @@ class Relatorio:
         df_tarefas_usuario = pd.DataFrame(list(query_result))
         mongo.close()
         print(df_tarefas_usuario)
-        input("Pressione Enter para Sair do Relatório de Tarefas por Usuário")
+        
 
     def get_relatorio_usuarios(self):
         mongo = MongoQueries()
@@ -110,4 +132,4 @@ class Relatorio:
         df_usuarios = pd.DataFrame(list(query_result))
         mongo.close()
         print(df_usuarios)
-        input("Pressione Enter para Sair do Relatório de Usuários")
+        

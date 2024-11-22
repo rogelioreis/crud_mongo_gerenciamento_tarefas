@@ -1,8 +1,10 @@
 from model.usuarios import Usuario
+from reports.relatorios import Relatorio
 from conexion.mongo_queries import MongoQueries
 
 class Controller_Usuario:
     def __init__(self):
+        self.relatorio = Relatorio()
         pass
 
     def inserir_usuario(self) -> Usuario:
@@ -52,7 +54,7 @@ class Controller_Usuario:
     def excluir_usuario(self):
         mongo = MongoQueries()
         mongo.connect()
-        self.listar_usuarios(mongo)
+        self.listar_usuarios()
         cpf = input("CPF do Usuário que irá excluir: ")
 
         if self.verifica_existencia_usuario(mongo, cpf):
@@ -70,13 +72,8 @@ class Controller_Usuario:
         else:
             print(f"O CPF {cpf} não existe.")
 
-    def listar_usuarios(self, mongo: MongoQueries):
-        query = list(mongo.db["usuarios"].find({}, {"_id": 0, "cpf": 1, "nome": 1}))
-        if query:
-            for usuario in query:
-                print(usuario)
-        else:
-            print("Nenhum usuário encontrado.")
+    def listar_usuarios(self):
+        self.relatorio.get_relatorio_usuarios()
 
     def verifica_existencia_usuario(self, mongo: MongoQueries, cpf: str) -> bool:
         query = mongo.db["usuarios"].find_one({"cpf": cpf})

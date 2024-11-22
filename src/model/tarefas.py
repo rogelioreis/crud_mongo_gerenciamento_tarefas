@@ -1,4 +1,5 @@
 from datetime import datetime
+import pandas as pd
 from model.usuarios import Usuario  
 
 class Tarefa:
@@ -36,8 +37,9 @@ class Tarefa:
 
     def set_status(self, status: int):
         self.status = status  
-        if status == 1:  
-            self.set_data_conclusao(datetime.now())
+        if status == 1: 
+            data_conclusao_atual = int(datetime.now().timestamp() * 1000)
+            self.set_data_conclusao(data_conclusao_atual)
 
     def set_usuario(self, usuario: Usuario):
         self.usuario = usuario
@@ -64,10 +66,14 @@ class Tarefa:
         return self.usuario
 
     def to_string(self) -> str:
+
+        data_criacao = pd.to_datetime(self.get_data_criacao(), unit = 'ms')
+        data_conclusao = pd.to_datetime(self.get_data_conclusao(), unit = 'ms')
+
         return (f"Tarefa: {self.get_codigo_tarefa()} | "
                 f"Título: {self.get_titulo()} | "
                 f"Descrição: {self.get_descricao()} | "
-                f"Data de Criação: {self.get_data_criacao()} | "
-                f"Data de Conclusão: {self.get_data_conclusao().strftime('%Y-%m-%d %H:%M:%S') if self.get_data_conclusao() else 'N/A'} | "
+                f"Data de Criação: {data_criacao} | "
+                f"Data de Conclusão: {data_conclusao} | "
                 f"Status: {'Concluída' if self.get_status() == 1 else 'Pendente'} | "
-                f"Usuário: {self.get_usuario().get_nome() if self.get_usuario() else 'N/A'}")
+                f"Usuário: {self.get_usuario().get_nome()}")

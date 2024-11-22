@@ -1,20 +1,22 @@
 from model.tarefas import Tarefa
 from model.usuarios import Usuario
+from reports.relatorios import Relatorio
 from controller.controller_usuario import Controller_Usuario
 from conexion.mongo_queries import MongoQueries
+import pandas as pd
 from datetime import datetime
 
 class Controller_Tarefa:
     def __init__(self):
         self.ctrl_usuario = Controller_Usuario()
-        self.mongo = MongoQueries() # Conexão com o MongoDB
+        self.relatorio = Relatorio()
+        self.mongo = MongoQueries() 
         
 
     def inserir_tarefa(self) -> Tarefa:
 
         self.mongo.connect()
         
-        # Lista os usuários
         self.listar_usuarios()
 
         usuario_cpf = str(input("Digite o CPF do Usuário responsável pela tarefa: "))
@@ -24,19 +26,27 @@ class Controller_Tarefa:
         
         titulo = str(input("Digite o titulo da tarefa: "))
         descricao = str(input("Digite a descrição da tarefa: "))
-        data_criacao = datetime.now()
+        data_criacao = int(datetime.now().timestamp() * 1000)
 
-        # Inserção da tarefa no MongoDB
+        # Gera o próximo código de tarefa incremental
+        ultimo_codigo = self.mongo.db['tarefas'].find_one(
+            sort=[("codigo_tarefa", -1)],  # Ordena por código de tarefa em ordem decrescente
+            projection={"codigo_tarefa": 1}
+        )
+        novo_codigo_tarefa = (ultimo_codigo["codigo_tarefa"] + 1) if ultimo_codigo else 1
+
         nova_tarefa = {
+            "codigo_tarefa": novo_codigo_tarefa,
             "titulo": titulo,
             "descricao": descricao,
             "data_criacao": data_criacao,
-            "usuario_cpf": usuario.get_CPF(),
+            "data_conclusao": None,  
             "status": 0,  # Status 0 para tarefa pendente
+            "cpf": usuario.get_CPF(),
         }
 
         resultado = self.mongo.db['tarefas'].insert_one(nova_tarefa)
-        nova_tarefa["codigo_tarefa"] = resultado.inserted_id
+        nova_tarefa["_id"] = resultado.inserted_id
 
         # Recupera a tarefa inserida
         tarefa_inserida = Tarefa(
@@ -58,10 +68,10 @@ class Controller_Tarefa:
 
         self.listar_tarefas()
 
-        codigo_tarefa = str(input("Código da Tarefa que irá alterar: "))        
+        codigo_tarefa = int(input("Código da Tarefa que irá alterar: "))        
 
         # Verifica se a tarefa existe
-        tarefa_atual = self.mongo.db['tarefas'].find_one({"_id": codigo_tarefa})
+        tarefa_atual = self.mongo.db['tarefas'].find_one({"codigo_tarefa": codigo_tarefa})
         if tarefa_atual is None:
             print(f"O código {codigo_tarefa} não existe.")
             return None
@@ -69,7 +79,8 @@ class Controller_Tarefa:
         if tarefa_atual["status"] == 1:
             print("Não é possível atualizar uma tarefa que já foi concluída.")
             return None
-
+        
+        print()
         print("1 - Alterar dados")
         print("2 - Concluir tarefa")
         print("0 - Sair")
@@ -77,6 +88,7 @@ class Controller_Tarefa:
 
         if escolha == 1:
 
+            print()
             self.listar_usuarios()
             usuario_cpf = str(input("Digite o CPF do Usuário responsável pela tarefa: "))
             usuario = self.valida_usuario(usuario_cpf)
@@ -87,17 +99,17 @@ class Controller_Tarefa:
             novo_titulo = str(input("Digite o novo titulo da tarefa: "))
             nova_descricao = str(input("Digite a nova descrição da tarefa: "))
             
-            data_criacao = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            data_criacao = int(datetime.now().timestamp() * 1000)
 
             # Atualiza a tarefa no MongoDB
             self.mongo.db['tarefas'].update_one(
-                {"_id": codigo_tarefa},
+                {"codigo_tarefa": codigo_tarefa},
                 {
                     "$set": {
                         "titulo": novo_titulo,
                         "descricao": nova_descricao,
                         "data_criacao": data_criacao,
-                        "usuario_cpf": usuario.get_CPF()
+                        "cpf": usuario.get_CPF()
                     }
                 }
             )
@@ -115,15 +127,17 @@ class Controller_Tarefa:
             return tarefa_atualizada
             
         elif escolha == 2:
+
+            data_conclusao_atual = int(datetime.now().timestamp() * 1000)
             # Conclui a tarefa
             self.mongo.db['tarefas'].update_one(
-                {"_id": codigo_tarefa},
-                {"$set": {"status": 1, "data_conclusao": datetime.now().strftime('%Y-%m-%d %H:%M:%S')}}
+                {"codigo_tarefa": codigo_tarefa},
+                {"$set": {"status": 1, "data_conclusao": data_conclusao_atual}}
             )
 
             # Atualiza a tarefa concluída
-            tarefa_atualizada = self.mongo.db['tarefas'].find_one({"_id": codigo_tarefa})
-            usuario_cpf = tarefa_atualizada["usuario_cpf"]
+            tarefa_atualizada = self.mongo.db['tarefas'].find_one({"codigo_tarefa": codigo_tarefa})
+            usuario_cpf = tarefa_atualizada["cpf"]
             usuario = self.valida_usuario(usuario_cpf)
 
             tarefa_concluida = Tarefa(
@@ -131,6 +145,7 @@ class Controller_Tarefa:
                 titulo=tarefa_atualizada["titulo"],
                 descricao=tarefa_atualizada["descricao"],
                 data_criacao=tarefa_atualizada["data_criacao"],
+                data_conclusao=tarefa_atualizada["data_conclusao"],
                 status=1,
                 usuario=usuario
             )
@@ -149,10 +164,10 @@ class Controller_Tarefa:
 
         self.listar_tarefas()
 
-        codigo_tarefa = str(input("Código da Tarefa que irá excluir: "))        
+        codigo_tarefa = int(input("Código da Tarefa que irá excluir: "))        
 
         # Verifica se a tarefa existe
-        tarefa_atual = self.mongo.db['tarefas'].find_one({"_id": codigo_tarefa})
+        tarefa_atual = self.mongo.db['tarefas'].find_one({"codigo_tarefa": codigo_tarefa})
         if tarefa_atual is None:
             self.mongo.close()
             print(f"O código {codigo_tarefa} não existe.")
@@ -160,21 +175,16 @@ class Controller_Tarefa:
 
         opcao_excluir = input(f"Tem certeza que deseja excluir a tarefa {codigo_tarefa} [S ou N]: ")
         if opcao_excluir.lower() == "s":
-            # Remove a tarefa do MongoDB
-            self.mongo.db['tarefas'].delete_one({"_id": codigo_tarefa})
+            
+            self.mongo.db['tarefas'].delete_one({"codigo_tarefa": codigo_tarefa})
             self.mongo.close()
             print("Tarefa removida com sucesso!")
 
     def listar_usuarios(self):
-        usuarios = self.mongo.db['usuarios'].find().sort("nome")
-        for usuario in usuarios:
-            print(f"{usuario['cpf']} - {usuario['nome']}")
+        self.relatorio.get_relatorio_usuarios()
 
     def listar_tarefas(self):
-        tarefas = self.mongo.db['tarefas'].find().sort("data_criacao")
-        for tarefa in tarefas:
-            status = "Pendente" if tarefa["status"] == 0 else "Concluída"
-            print(f"Código: {tarefa['_id']}, Título: {tarefa['titulo']}, Status: {status}, Criado em: {tarefa['data_criacao']}")
+        self.relatorio.get_relatorio_tarefas()
 
     def valida_usuario(self, usuario_cpf: str) -> Usuario:
         usuario = self.mongo.db['usuarios'].find_one({"cpf": usuario_cpf})

@@ -5,12 +5,11 @@ class SplashScreen:
         self.mongo_queries = mongo_queries
 
     def contar_documentos(self, collection_name):
-        # Conta documentos em uma coleção
         return self.mongo_queries.db[collection_name].count_documents({})  
 
     def exibir(self):
-        usuarios = self.contar_documentos("usuarios")  # Nome da coleção de usuários no MongoDB
-        tarefas = self.contar_documentos("tarefas")    # Nome da coleção de tarefas no MongoDB
+        usuarios = self.contar_documentos("usuarios")  
+        tarefas = self.contar_documentos("tarefas")    
 
         print("###############################################")
         print("#                                             #")
