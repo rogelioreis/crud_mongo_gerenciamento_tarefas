@@ -18,9 +18,9 @@ cd /caminho/para/projetos/gerenciamento-tarefas/src
 
 #### 4 - O sistema exige que tabelas existam. Para criar as tabelas e registros execute o codigo:
 ```shell
-python criar_colecoes_e_dados.py
+python criar_colecoes_e_documentos.py
 ```
-#### Atenção: tendo em vista que esse projeto é continuidade do crud_oracle_gerenciamento_tarefas, é importante que as tabelas do Oracle existam e estejam preenchidas, pois o script criar_colecoes_e_dados.py irá realizar uma consulta em cada uma das tabelas e preencher as collections com os novos documents.
+**Atenção: tendo em vista que esse projeto é continuidade do [crud_oracle_gerenciamento_tarefas](https://github.com/rogelioreis/crud_oracle_gerenciamento_tarefas), é importante que as tabelas do Oracle existam e estejam preenchidas, pois o script criar_colecoes_e_documentos.py irá realizar uma consulta em cada uma das tabelas e preencher as coleções com os novos documentos.**
 
 #### 5 - Para executar o programa execute o codigo do programa principal:
 ```shell
