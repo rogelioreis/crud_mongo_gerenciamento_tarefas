@@ -105,11 +105,12 @@ def run():
             tela_inicial.exibir()
             config.clear_console()
             print("Obrigado por utilizar o nosso sistema.")
+            mongo.close()
             exit(0)
 
         else:
             print("Opção incorreta.")
-            exit(1)
+            config.clear_console(1)
 
 if __name__ == "__main__":
     run()
