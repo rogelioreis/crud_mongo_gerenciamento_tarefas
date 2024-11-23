@@ -29,5 +29,5 @@ python principal.py
 
 ## Link video explicativo:
 ```shell
-
+https://www.youtube.com/watch?v=GMq9udz9AeQ
 ```
